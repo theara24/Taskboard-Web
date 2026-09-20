@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useIssueStore } from '../../store/issueStore';
 import { useAuthStore } from '../../store/authStore';
 import { useProjectStore } from '../../store/projectStore';
@@ -39,6 +39,7 @@ export const IssueDetailModal: React.FC<IssueDetailModalProps> = ({
     issues,
     comments,
     activities,
+    fetchIssueDetail,
     updateIssue,
     deleteIssue,
     addComment,
@@ -50,6 +51,33 @@ export const IssueDetailModal: React.FC<IssueDetailModalProps> = ({
   const [commentText, setCommentText] = useState('');
   const [isDeletingIssue, setIsDeletingIssue] = useState(false);
 
+  useEffect(() => {
+    if (issueId) {
+      fetchIssueDetail(issueId);
+
+      const handleFocus = () => {
+        if (!document.hidden) {
+          fetchIssueDetail(issueId, true);
+        }
+      };
+
+      window.addEventListener('focus', handleFocus);
+      document.addEventListener('visibilitychange', handleFocus);
+
+      const interval = setInterval(() => {
+        if (!document.hidden) {
+          fetchIssueDetail(issueId, true);
+        }
+      }, 4000);
+
+      return () => {
+        window.removeEventListener('focus', handleFocus);
+        document.removeEventListener('visibilitychange', handleFocus);
+        clearInterval(interval);
+      };
+    }
+  }, [issueId, fetchIssueDetail]);
+
   const issue = issues.find((i) => i.id === issueId);
   const project = projects.find((p) => p.id === issue?.projectId);
 
@@ -58,46 +86,37 @@ export const IssueDetailModal: React.FC<IssueDetailModalProps> = ({
   const issueComments = comments.filter((c) => c.issueId === issue.id);
   const issueActivities = activities.filter((a) => a.issueId === issue.id);
 
-  const handleStatusChange = (newStatus: IssueStatus) => {
-    if (!currentUser) return;
-    updateIssue(issue.id, { status: newStatus }, currentUser);
+  const handleStatusChange = async (newStatus: IssueStatus) => {
+    await updateIssue(issue.id, { status: newStatus });
     showToast('info', `Status moved to ${newStatus}`);
   };
 
-  const handlePriorityChange = (newPriority: IssuePriority) => {
-    if (!currentUser) return;
-    updateIssue(issue.id, { priority: newPriority }, currentUser);
+  const handlePriorityChange = async (newPriority: IssuePriority) => {
+    await updateIssue(issue.id, { priority: newPriority });
     showToast('info', `Priority changed to ${newPriority}`);
   };
 
-  const handleTypeChange = (newType: IssueType) => {
-    if (!currentUser) return;
-    updateIssue(issue.id, { type: newType }, currentUser);
+  const handleTypeChange = async (newType: IssueType) => {
+    await updateIssue(issue.id, { type: newType });
     showToast('info', `Type changed to ${newType}`);
   };
 
-  const handleAssigneeChange = (assigneeId: string) => {
-    if (!currentUser || !project) return;
-    const member = project.members.find((m) => m.userId === assigneeId);
-    updateIssue(
-      issue.id,
-      { assigneeId: member ? member.userId : null, assignee: member ? member.user : null },
-      currentUser,
-    );
+  const handleAssigneeChange = async (assigneeId: string) => {
+    await updateIssue(issue.id, { assigneeId: assigneeId || null });
     showToast('info', `Assignee updated`);
   };
 
-  const handleAddComment = (e: React.FormEvent) => {
+  const handleAddComment = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!commentText.trim() || !currentUser) return;
 
-    addComment(issue.id, currentUser, commentText.trim());
+    await addComment(issue.id, commentText.trim());
     setCommentText('');
     showToast('success', 'Comment added');
   };
 
-  const handleDeleteIssue = () => {
-    deleteIssue(issue.id);
+  const handleDeleteIssue = async () => {
+    await deleteIssue(issue.id);
     showToast('success', `Issue ${issue.issueKey} deleted`);
     setIsDeletingIssue(false);
     onClose();
@@ -113,13 +132,13 @@ export const IssueDetailModal: React.FC<IssueDetailModalProps> = ({
       >
         <div className="space-y-6 -mt-3">
           {/* Header Bar: Key, Project, Actions */}
-          <div className="flex flex-wrap items-center justify-between gap-4 pb-4 border-b border-slate-100">
+          <div className="flex flex-wrap items-center justify-between gap-4 pb-4 border-b border-slate-100 dark:border-slate-800">
             <div className="flex items-center gap-3">
-              <span className="text-sm font-mono font-bold px-2.5 py-1 rounded-lg bg-slate-100 text-slate-800 border border-slate-200">
+              <span className="text-sm font-mono font-bold px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-100 border border-slate-200 dark:border-slate-700">
                 {issue.issueKey}
               </span>
               <span className="text-xs text-slate-400 font-medium">in</span>
-              <span className="text-xs font-semibold text-slate-600 bg-slate-50 px-2 py-1 rounded">
+              <span className="text-xs font-semibold text-slate-600 dark:text-slate-300 bg-slate-50 dark:bg-slate-800 px-2 py-1 rounded">
                 {project?.name || 'Project'}
               </span>
             </div>
@@ -137,7 +156,7 @@ export const IssueDetailModal: React.FC<IssueDetailModalProps> = ({
                 variant="ghost"
                 size="sm"
                 onClick={() => setIsDeletingIssue(true)}
-                className="text-rose-600 hover:bg-rose-50"
+                className="text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/30"
                 leftIcon={<Trash2 className="w-3.5 h-3.5" />}
               >
                 Delete
@@ -150,10 +169,10 @@ export const IssueDetailModal: React.FC<IssueDetailModalProps> = ({
             {/* Left Column (2 Cols): Title, Description, Tabs (Comments/Activity) */}
             <div className="lg:col-span-2 space-y-6">
               <div>
-                <h2 className="text-xl font-bold text-slate-900 leading-snug">
+                <h2 className="text-xl font-bold text-slate-900 dark:text-white leading-snug">
                   {issue.title}
                 </h2>
-                <div className="mt-3 text-sm text-slate-600 leading-relaxed whitespace-pre-line bg-slate-50/70 p-4 rounded-xl border border-slate-200/70 min-h-[90px]">
+                <div className="mt-3 text-sm text-slate-600 dark:text-slate-300 leading-relaxed whitespace-pre-line bg-slate-50/70 dark:bg-slate-800/60 p-4 rounded-xl border border-slate-200/70 dark:border-slate-700/60 min-h-[90px]">
                   {issue.description || (
                     <span className="text-slate-400 italic">No description provided.</span>
                   )}
@@ -170,7 +189,7 @@ export const IssueDetailModal: React.FC<IssueDetailModalProps> = ({
                     {issue.labels.map((label) => (
                       <span
                         key={label.id}
-                        className="px-2.5 py-0.5 rounded-md text-xs font-medium bg-blue-50 text-blue-700 border border-blue-200"
+                        className="px-2.5 py-0.5 rounded-md text-xs font-medium bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-900/50"
                       >
                         #{label.name}
                       </span>
@@ -180,14 +199,14 @@ export const IssueDetailModal: React.FC<IssueDetailModalProps> = ({
               )}
 
               {/* Discussion & Activity Section */}
-              <div className="pt-4 border-t border-slate-200">
-                <div className="flex items-center gap-4 border-b border-slate-200 pb-2">
+              <div className="pt-4 border-t border-slate-200 dark:border-slate-800">
+                <div className="flex items-center gap-4 border-b border-slate-200 dark:border-slate-800 pb-2">
                   <button
                     onClick={() => setActiveTab('comments')}
                     className={`flex items-center gap-2 pb-2 text-sm font-semibold transition-all relative ${
                       activeTab === 'comments'
-                        ? 'text-brand-600 border-b-2 border-brand-600 -mb-[10px]'
-                        : 'text-slate-500 hover:text-slate-700'
+                        ? 'text-brand-600 dark:text-brand-400 border-b-2 border-brand-600 dark:border-brand-400 -mb-[10px]'
+                        : 'text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200'
                     }`}
                   >
                     <MessageSquare className="w-4 h-4" />
@@ -197,8 +216,8 @@ export const IssueDetailModal: React.FC<IssueDetailModalProps> = ({
                     onClick={() => setActiveTab('activity')}
                     className={`flex items-center gap-2 pb-2 text-sm font-semibold transition-all relative ${
                       activeTab === 'activity'
-                        ? 'text-brand-600 border-b-2 border-brand-600 -mb-[10px]'
-                        : 'text-slate-500 hover:text-slate-700'
+                        ? 'text-brand-600 dark:text-brand-400 border-b-2 border-brand-600 dark:border-brand-400 -mb-[10px]'
+                        : 'text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200'
                     }`}
                   >
                     <History className="w-4 h-4" />
@@ -218,7 +237,7 @@ export const IssueDetailModal: React.FC<IssueDetailModalProps> = ({
                           value={commentText}
                           onChange={(e) => setCommentText(e.target.value)}
                           placeholder="Leave a comment or review note..."
-                          className="w-full rounded-xl border border-slate-300 p-2.5 text-sm focus:border-brand-500 focus:ring-1 focus:ring-brand-500 outline-none resize-none"
+                          className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 p-2.5 text-sm focus:border-brand-500 focus:ring-1 focus:ring-brand-500 outline-none resize-none"
                         />
                         <div className="flex justify-end mt-1.5">
                           <Button
@@ -237,22 +256,22 @@ export const IssueDetailModal: React.FC<IssueDetailModalProps> = ({
                     {/* Comments list */}
                     <div className="space-y-3 pt-2">
                       {issueComments.length === 0 ? (
-                        <p className="text-xs text-slate-400 italic py-3 text-center">
+                        <p className="text-xs text-slate-400 dark:text-slate-500 italic py-3 text-center">
                           No comments yet. Start the discussion above.
                         </p>
                       ) : (
                         issueComments.map((comment) => (
                           <div
                             key={comment.id}
-                            className="p-3.5 rounded-xl bg-white border border-slate-200 shadow-xs"
+                            className="p-3.5 rounded-xl bg-white dark:bg-slate-800/90 border border-slate-200 dark:border-slate-700/80 shadow-xs"
                           >
                             <div className="flex items-center justify-between mb-1.5">
                               <div className="flex items-center gap-2">
                                 <UserAvatar user={comment.author} size="xs" />
-                                <span className="text-xs font-semibold text-slate-800">
+                                <span className="text-xs font-semibold text-slate-800 dark:text-slate-200">
                                   {comment.author.name}
                                 </span>
-                                <span className="text-[11px] text-slate-400">
+                                <span className="text-[11px] text-slate-400 dark:text-slate-500">
                                   {new Date(comment.createdAt).toLocaleDateString(undefined, {
                                     month: 'short',
                                     day: 'numeric',
@@ -264,14 +283,14 @@ export const IssueDetailModal: React.FC<IssueDetailModalProps> = ({
                               {currentUser?.id === comment.authorId && (
                                 <button
                                   onClick={() => deleteComment(comment.id)}
-                                  className="text-slate-400 hover:text-rose-600 transition-colors p-1"
+                                  className="text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 transition-colors p-1"
                                   title="Delete comment"
                                 >
                                   <Trash2 className="w-3.5 h-3.5" />
                                 </button>
                               )}
                             </div>
-                            <p className="text-xs text-slate-700 pl-7 leading-relaxed">
+                            <p className="text-xs text-slate-700 dark:text-slate-300 pl-7 leading-relaxed">
                               {comment.content}
                             </p>
                           </div>
@@ -285,40 +304,40 @@ export const IssueDetailModal: React.FC<IssueDetailModalProps> = ({
                 {activeTab === 'activity' && (
                   <div className="mt-4 space-y-2.5">
                     {issueActivities.length === 0 ? (
-                      <p className="text-xs text-slate-400 italic py-3 text-center">
+                      <p className="text-xs text-slate-400 dark:text-slate-500 italic py-3 text-center">
                         No activity recorded yet.
                       </p>
                     ) : (
                       issueActivities.map((act) => (
                         <div
                           key={act.id}
-                          className="flex items-start gap-2.5 text-xs text-slate-600 py-1.5 border-l-2 border-slate-200 pl-3 ml-2"
+                          className="flex items-start gap-2.5 text-xs text-slate-600 dark:text-slate-300 py-1.5 border-l-2 border-slate-200 dark:border-slate-700 pl-3 ml-2"
                         >
-                          <Clock className="w-3.5 h-3.5 text-slate-400 mt-0.5 shrink-0" />
+                          <Clock className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500 mt-0.5 shrink-0" />
                           <div>
-                            <span className="font-medium text-slate-800">
+                            <span className="font-medium text-slate-800 dark:text-slate-200">
                               {act.user.name}
                             </span>{' '}
                             {act.action === 'STATUS_CHANGED' ? (
                               <span>
                                 changed status from{' '}
-                                <span className="font-semibold text-slate-700">
+                                <span className="font-semibold text-slate-700 dark:text-slate-300">
                                   {act.oldValue}
                                 </span>{' '}
                                 to{' '}
-                                <span className="font-semibold text-brand-600">
+                                <span className="font-semibold text-brand-600 dark:text-brand-400">
                                   {act.newValue}
                                 </span>
                               </span>
                             ) : act.action === 'PRIORITY_CHANGED' ? (
                               <span>
                                 changed priority to{' '}
-                                <span className="font-semibold">{act.newValue}</span>
+                                <span className="font-semibold text-slate-700 dark:text-slate-300">{act.newValue}</span>
                               </span>
                             ) : (
                               <span>{act.newValue || act.action}</span>
                             )}
-                            <span className="text-[11px] text-slate-400 ml-2">
+                            <span className="text-[11px] text-slate-400 dark:text-slate-500 ml-2">
                               {new Date(act.createdAt).toLocaleDateString(undefined, {
                                 month: 'short',
                                 day: 'numeric',
@@ -336,14 +355,14 @@ export const IssueDetailModal: React.FC<IssueDetailModalProps> = ({
             </div>
 
             {/* Right Column (1 Col): Metadata Panel */}
-            <div className="space-y-5 bg-slate-50/60 p-5 rounded-2xl border border-slate-200">
-              <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500 pb-2 border-b border-slate-200">
+            <div className="space-y-5 bg-slate-50/60 dark:bg-slate-800/40 p-5 rounded-2xl border border-slate-200 dark:border-slate-700/80">
+              <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 pb-2 border-b border-slate-200 dark:border-slate-700">
                 Attributes
               </h3>
 
               {/* Status */}
               <div>
-                <label className="block text-xs font-medium text-slate-500 mb-1">
+                <label className="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">
                   Status
                 </label>
                 <div className="flex items-center gap-2">
@@ -351,7 +370,7 @@ export const IssueDetailModal: React.FC<IssueDetailModalProps> = ({
                   <select
                     value={issue.status}
                     onChange={(e) => handleStatusChange(e.target.value as IssueStatus)}
-                    className="text-xs rounded-lg border border-slate-200 bg-white py-1 px-2 text-slate-700 focus:outline-none focus:ring-1 focus:ring-brand-500"
+                    className="text-xs rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 py-1 px-2 focus:outline-none focus:ring-1 focus:ring-brand-500"
                   >
                     <option value="BACKLOG">Backlog</option>
                     <option value="TODO">To Do</option>
@@ -363,7 +382,7 @@ export const IssueDetailModal: React.FC<IssueDetailModalProps> = ({
 
               {/* Priority */}
               <div>
-                <label className="block text-xs font-medium text-slate-500 mb-1">
+                <label className="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">
                   Priority
                 </label>
                 <div className="flex items-center gap-2">
@@ -371,7 +390,7 @@ export const IssueDetailModal: React.FC<IssueDetailModalProps> = ({
                   <select
                     value={issue.priority}
                     onChange={(e) => handlePriorityChange(e.target.value as IssuePriority)}
-                    className="text-xs rounded-lg border border-slate-200 bg-white py-1 px-2 text-slate-700 focus:outline-none focus:ring-1 focus:ring-brand-500"
+                    className="text-xs rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 py-1 px-2 focus:outline-none focus:ring-1 focus:ring-brand-500"
                   >
                     <option value="LOW">Low</option>
                     <option value="MEDIUM">Medium</option>
@@ -383,7 +402,7 @@ export const IssueDetailModal: React.FC<IssueDetailModalProps> = ({
 
               {/* Type */}
               <div>
-                <label className="block text-xs font-medium text-slate-500 mb-1">
+                <label className="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">
                   Issue Type
                 </label>
                 <div className="flex items-center gap-2">
@@ -391,7 +410,7 @@ export const IssueDetailModal: React.FC<IssueDetailModalProps> = ({
                   <select
                     value={issue.type}
                     onChange={(e) => handleTypeChange(e.target.value as IssueType)}
-                    className="text-xs rounded-lg border border-slate-200 bg-white py-1 px-2 text-slate-700 focus:outline-none focus:ring-1 focus:ring-brand-500"
+                    className="text-xs rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 py-1 px-2 focus:outline-none focus:ring-1 focus:ring-brand-500"
                   >
                     <option value="TASK">Task</option>
                     <option value="BUG">Bug</option>
@@ -402,7 +421,7 @@ export const IssueDetailModal: React.FC<IssueDetailModalProps> = ({
 
               {/* Assignee */}
               <div>
-                <label className="block text-xs font-medium text-slate-500 mb-1">
+                <label className="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">
                   Assignee
                 </label>
                 <div className="flex items-center gap-2 mb-1.5">
@@ -411,10 +430,10 @@ export const IssueDetailModal: React.FC<IssueDetailModalProps> = ({
                 <select
                   value={issue.assigneeId || ''}
                   onChange={(e) => handleAssigneeChange(e.target.value)}
-                  className="w-full text-xs rounded-lg border border-slate-200 bg-white py-1 px-2 text-slate-700 focus:outline-none"
+                  className="w-full text-xs rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 py-1 px-2 focus:outline-none"
                 >
                   <option value="">Unassigned</option>
-                  {project?.members.map((m) => (
+                  {(project?.members || []).map((m) => (
                     <option key={m.userId} value={m.userId}>
                       {m.user.name}
                     </option>
@@ -424,7 +443,7 @@ export const IssueDetailModal: React.FC<IssueDetailModalProps> = ({
 
               {/* Reporter */}
               <div>
-                <label className="block text-xs font-medium text-slate-500 mb-1">
+                <label className="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">
                   Reporter
                 </label>
                 <div className="flex items-center gap-2">
@@ -434,10 +453,10 @@ export const IssueDetailModal: React.FC<IssueDetailModalProps> = ({
 
               {/* Due Date */}
               <div>
-                <label className="block text-xs font-medium text-slate-500 mb-1">
+                <label className="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">
                   Due Date
                 </label>
-                <div className="flex items-center gap-1.5 text-xs text-slate-700">
+                <div className="flex items-center gap-1.5 text-xs text-slate-700 dark:text-slate-200">
                   <Calendar className="w-3.5 h-3.5 text-slate-400" />
                   <span>
                     {issue.dueDate
@@ -452,7 +471,7 @@ export const IssueDetailModal: React.FC<IssueDetailModalProps> = ({
               </div>
 
               {/* Timestamps */}
-              <div className="pt-3 border-t border-slate-200 text-[11px] text-slate-400 space-y-1">
+              <div className="pt-3 border-t border-slate-200 dark:border-slate-700 text-[11px] text-slate-400 dark:text-slate-500 space-y-1">
                 <div>Created: {new Date(issue.createdAt).toLocaleDateString()}</div>
                 <div>Updated: {new Date(issue.updatedAt).toLocaleDateString()}</div>
               </div>

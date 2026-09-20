@@ -13,7 +13,7 @@ export const Breadcrumbs: React.FC = () => {
 
   if (pathnames.length === 0 || pathnames[0] === 'dashboard') {
     return (
-      <div className="flex items-center gap-1.5 text-xs text-slate-500 font-medium py-3">
+      <div className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400 font-medium py-3">
         <Home className="w-3.5 h-3.5 text-slate-400" />
         <span>Dashboard</span>
       </div>
@@ -21,8 +21,8 @@ export const Breadcrumbs: React.FC = () => {
   }
 
   return (
-    <nav className="flex items-center gap-1.5 text-xs text-slate-500 font-medium py-3 overflow-x-auto">
-      <Link to="/dashboard" className="hover:text-slate-900 flex items-center gap-1">
+    <nav className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400 font-medium py-3 overflow-x-auto">
+      <Link to="/dashboard" className="hover:text-slate-900 dark:hover:text-white flex items-center gap-1">
         <Home className="w-3.5 h-3.5" />
       </Link>
 
@@ -43,13 +43,13 @@ export const Breadcrumbs: React.FC = () => {
 
         return (
           <React.Fragment key={to}>
-            <ChevronRight className="w-3 h-3 text-slate-400 shrink-0" />
+            <ChevronRight className="w-3 h-3 text-slate-400 dark:text-slate-600 shrink-0" />
             {isLast ? (
-              <span className="text-slate-800 font-semibold truncate max-w-[200px]">
+              <span className="text-slate-800 dark:text-slate-200 font-semibold truncate max-w-[200px]">
                 {displayTitle}
               </span>
             ) : (
-              <Link to={to} className="hover:text-slate-900 truncate max-w-[150px]">
+              <Link to={to} className="hover:text-slate-900 dark:hover:text-white truncate max-w-[150px]">
                 {displayTitle}
               </Link>
             )}

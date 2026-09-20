@@ -8,10 +8,20 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <script type="module" crossorigin src="/assets/index-LVRW_cvK.js"></script>
-    <link rel="stylesheet" crossorigin href="/assets/index-BHk1QpoE.css">
+    <script>
+      (function() {
+        const stored = localStorage.getItem('taskboard_theme');
+        if (stored === 'dark' || (!stored && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+          document.documentElement.classList.add('dark');
+        } else {
+          document.documentElement.classList.remove('dark');
+        }
+      })();
+    </script>
+    <script type="module" crossorigin src="/assets/index-Dy5OtmTO.js"></script>
+    <link rel="stylesheet" crossorigin href="/assets/index-BlIBvg0Q.css">
   </head>
-  <body class="h-full font-sans antialiased text-slate-800 bg-slate-50 selection:bg-brand-500 selection:text-white">
+  <body class="h-full font-sans antialiased text-slate-800 dark:text-slate-100 bg-slate-50 dark:bg-slate-950 selection:bg-blue-600 selection:text-white transition-colors duration-200">
     <div id="root" class="h-full flex flex-col"></div>
   </body>
 </html>

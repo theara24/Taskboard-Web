@@ -1,70 +1,141 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { User, Role } from '../types';
-import { INITIAL_USERS } from '../mock/initial-data';
+import { authApi } from '../api';
 
 interface AuthState {
   currentUser: User | null;
-  users: User[];
-  login: (email: string) => boolean;
-  register: (name: string, email: string, role?: Role) => boolean;
+  token: string | null;
+  isLoading: boolean;
+  error: string | null;
+
+  login: (email: string, password: string) => Promise<boolean>;
+  register: (name: string, email: string, password: string, role?: Role) => Promise<boolean>;
+  googleDemoLogin: (email: string, name?: string, avatarUrl?: string) => Promise<boolean>;
+  updateProfile: (data: { name?: string; avatarUrl?: string }) => Promise<boolean>;
+  setSession: (token: string, user: User) => void;
+  checkAuth: () => Promise<void>;
   logout: () => void;
-  switchUser: (userId: string) => void;
+  clearError: () => void;
 }
 
 export const useAuthStore = create<AuthState>()(
   persist(
     (set, get) => ({
-      currentUser: INITIAL_USERS[1], // Default to Alice Johnson
-      users: INITIAL_USERS,
+      currentUser: null,
+      token: typeof window !== 'undefined' ? localStorage.getItem('taskboard_token') : null,
+      isLoading: false,
+      error: null,
 
-      login: (email: string) => {
-        const found = get().users.find(
-          (u) => u.email.toLowerCase() === email.toLowerCase(),
-        );
-        if (found) {
-          set({ currentUser: found });
+      clearError: () => set({ error: null }),
+
+      login: async (email: string, password: string) => {
+        set({ isLoading: true, error: null });
+        try {
+          const res = await authApi.login(email.trim(), password);
+          localStorage.setItem('taskboard_token', res.token);
+          set({
+            currentUser: res.user,
+            token: res.token,
+            isLoading: false,
+          });
           return true;
-        }
-        return false;
-      },
-
-      register: (name: string, email: string, role: Role = 'USER') => {
-        const existing = get().users.find(
-          (u) => u.email.toLowerCase() === email.toLowerCase(),
-        );
-        if (existing) {
+        } catch (err: any) {
+          set({
+            error: err.message || 'Invalid email or password',
+            isLoading: false,
+          });
           return false;
         }
+      },
 
-        const newUser: User = {
-          id: `user-${Date.now()}`,
-          name,
-          email: email.toLowerCase(),
-          role,
-          avatarUrl: `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(name)}`,
-        };
+      register: async (name: string, email: string, password: string, role: Role = 'USER') => {
+        set({ isLoading: true, error: null });
+        try {
+          const res = await authApi.register(name.trim(), email.trim(), password, role);
+          localStorage.setItem('taskboard_token', res.token);
+          set({
+            currentUser: res.user,
+            token: res.token,
+            isLoading: false,
+          });
+          return true;
+        } catch (err: any) {
+          set({
+            error: err.message || 'Registration failed',
+            isLoading: false,
+          });
+          return false;
+        }
+      },
 
-        set((state) => ({
-          users: [...state.users, newUser],
-          currentUser: newUser,
-        }));
-        return true;
+      googleDemoLogin: async (email: string, name?: string, avatarUrl?: string) => {
+        set({ isLoading: true, error: null });
+        try {
+          const res = await authApi.googleDemoLogin(email.trim(), name, avatarUrl);
+          localStorage.setItem('taskboard_token', res.token);
+          set({
+            currentUser: res.user,
+            token: res.token,
+            isLoading: false,
+          });
+          return true;
+        } catch (err: any) {
+          set({
+            error: err.message || 'Google sign-in failed',
+            isLoading: false,
+          });
+          return false;
+        }
+      },
+
+      updateProfile: async (data: { name?: string; avatarUrl?: string }) => {
+        try {
+          const updated = await authApi.updateProfile(data);
+          set({ currentUser: updated });
+          return true;
+        } catch (err: any) {
+          set({ error: err.message || 'Failed to update profile' });
+          return false;
+        }
+      },
+
+      setSession: (token: string, user: User) => {
+        localStorage.setItem('taskboard_token', token);
+        set({
+          token,
+          currentUser: user,
+          error: null,
+        });
+      },
+
+      checkAuth: async () => {
+        const token = localStorage.getItem('taskboard_token');
+        if (!token) {
+          set({ currentUser: null, token: null });
+          return;
+        }
+
+        try {
+          const user = await authApi.getMe();
+          set({ currentUser: user, token });
+        } catch {
+          localStorage.removeItem('taskboard_token');
+          set({ currentUser: null, token: null });
+        }
       },
 
       logout: () => {
-        set({ currentUser: null });
-      },
-
-      switchUser: (userId: string) => {
-        const user = get().users.find((u) => u.id === userId);
-        if (user) {
-          set({ currentUser: user });
-        }
+        localStorage.removeItem('taskboard_token');
+        set({ currentUser: null, token: null, error: null });
       },
     }),
     {
-      name: 'taskboard_auth_v1',
+      name: 'taskboard_auth_session',
+      partialize: (state) => ({
+        currentUser: state.currentUser,
+        token: state.token,
+      }),
     },
   ),
 );

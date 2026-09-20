@@ -1,18 +1,48 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useProjectStore } from '../store/projectStore';
+import { useIssueStore } from '../store/issueStore';
 import { ProjectCard } from '../components/projects/ProjectCard';
 import { ProjectFormModal } from '../components/projects/ProjectFormModal';
 import { Button } from '../components/common/Button';
 import { EmptyState } from '../components/common/EmptyState';
-import { Plus, Search, FolderKanban } from 'lucide-react';
+import { Plus, Search, FolderKanban, Loader2 } from 'lucide-react';
 import { Project } from '../types';
 
 export const ProjectsPage: React.FC = () => {
-  const { projects } = useProjectStore();
+  const { projects, isLoading, fetchProjects } = useProjectStore();
+  const { fetchIssues } = useIssueStore();
 
   const [search, setSearch] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingProject, setEditingProject] = useState<Project | null>(null);
+
+  useEffect(() => {
+    fetchProjects();
+    fetchIssues();
+
+    const handleFocus = () => {
+      if (!document.hidden) {
+        fetchProjects(true);
+        fetchIssues(undefined, undefined, true);
+      }
+    };
+
+    window.addEventListener('focus', handleFocus);
+    document.addEventListener('visibilitychange', handleFocus);
+
+    const interval = setInterval(() => {
+      if (!document.hidden) {
+        fetchProjects(true);
+        fetchIssues(undefined, undefined, true);
+      }
+    }, 6000);
+
+    return () => {
+      window.removeEventListener('focus', handleFocus);
+      document.removeEventListener('visibilitychange', handleFocus);
+      clearInterval(interval);
+    };
+  }, [fetchProjects, fetchIssues]);
 
   const filteredProjects = projects.filter(
     (p) =>
@@ -36,10 +66,10 @@ export const ProjectsPage: React.FC = () => {
       {/* Header */}
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900 tracking-tight">
+          <h1 className="text-2xl font-bold text-slate-900 dark:text-white tracking-tight">
             Projects
           </h1>
-          <p className="text-sm text-slate-500 mt-0.5">
+          <p className="text-sm text-slate-500 dark:text-slate-400 mt-0.5">
             Manage, organize, and monitor all organizational workspaces
           </p>
         </div>
@@ -48,6 +78,7 @@ export const ProjectsPage: React.FC = () => {
           variant="primary"
           onClick={() => setIsModalOpen(true)}
           leftIcon={<Plus className="w-4 h-4" />}
+          className="bg-blue-600 hover:bg-blue-700 text-white"
         >
           Create Project
         </Button>
@@ -61,12 +92,16 @@ export const ProjectsPage: React.FC = () => {
           placeholder="Filter projects by name or key..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="w-full rounded-xl border border-slate-200 bg-white py-2 pl-9 pr-3 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+          className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white py-2 pl-9 pr-3 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
         />
       </div>
 
       {/* Projects Grid */}
-      {filteredProjects.length === 0 ? (
+      {isLoading && projects.length === 0 ? (
+        <div className="flex items-center justify-center p-16">
+          <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
+        </div>
+      ) : filteredProjects.length === 0 ? (
         <EmptyState
           icon={FolderKanban}
           title="No projects found"

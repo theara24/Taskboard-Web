@@ -67,7 +67,7 @@ export const Modal: React.FC<ModalProps> = ({
         <div
           ref={modalRef}
           className={cn(
-            'relative transform overflow-hidden rounded-2xl bg-white text-left shadow-2xl transition-all w-full my-8 border border-slate-200',
+            'relative transform overflow-hidden rounded-2xl bg-white dark:bg-slate-900 text-left shadow-2xl transition-all w-full my-8 border border-slate-200 dark:border-slate-800',
             maxWidthClasses[maxWidth],
           )}
           role="dialog"
@@ -75,21 +75,21 @@ export const Modal: React.FC<ModalProps> = ({
           aria-labelledby="modal-headline"
         >
           {/* Header */}
-          <div className="flex items-start justify-between p-6 border-b border-slate-100 pb-4">
+          <div className="flex items-start justify-between p-6 border-b border-slate-100 dark:border-slate-800 pb-4">
             <div>
               <h3
-                className="text-lg font-semibold text-slate-900 leading-6"
+                className="text-lg font-semibold text-slate-900 dark:text-white leading-6"
                 id="modal-headline"
               >
                 {title}
               </h3>
               {description && (
-                <p className="mt-1 text-sm text-slate-500">{description}</p>
+                <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">{description}</p>
               )}
             </div>
             <button
               type="button"
-              className="rounded-lg p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors"
+              className="rounded-lg p-1.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
               onClick={onClose}
             >
               <X className="w-5 h-5" />

@@ -1,17 +1,10 @@
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
 import { Issue, Comment, Label, Activity, IssueStatus, IssuePriority, IssueType, User } from '../types';
-import {
-  INITIAL_ISSUES,
-  INITIAL_COMMENTS,
-  INITIAL_LABELS,
-  INITIAL_ACTIVITIES,
-} from '../mock/initial-data';
-import { useProjectStore } from './projectStore';
+import { issueApi, commentApi, projectApi, CreateIssuePayload, UpdateIssuePayload } from '../api';
 
 interface CreateIssueParams {
   projectId: string;
-  reporter: User;
+  reporter?: User;
   title: string;
   description?: string;
   type: IssueType;
@@ -27,267 +20,208 @@ interface IssueState {
   comments: Comment[];
   labels: Label[];
   activities: Activity[];
+  currentIssueDetail: (Issue & { comments?: Comment[]; activities?: Activity[] }) | null;
+  isLoading: boolean;
+  error: string | null;
 
   // Issue Actions
-  createIssue: (params: CreateIssueParams) => Issue;
-  updateIssue: (
-    issueId: string,
-    updates: Partial<Omit<Issue, 'id' | 'issueKey' | 'projectId' | 'reporterId'>>,
-    modifier: User,
-  ) => void;
-  deleteIssue: (issueId: string) => void;
-  moveIssueStatus: (issueId: string, newStatus: IssueStatus, modifier: User) => void;
+  fetchIssues: (projectId?: string, filters?: any, silent?: boolean) => Promise<void>;
+  fetchIssueDetail: (id: string, silent?: boolean) => Promise<void>;
+  createIssue: (params: CreateIssueParams) => Promise<Issue | null>;
+  updateIssue: (issueId: string, updates: Partial<UpdateIssuePayload>) => Promise<void>;
+  deleteIssue: (issueId: string) => Promise<void>;
+  moveIssueStatus: (issueId: string, newStatus: IssueStatus, modifier?: User) => Promise<void>;
 
   // Comment Actions
-  addComment: (issueId: string, author: User, content: string) => Comment;
-  updateComment: (commentId: string, content: string) => void;
-  deleteComment: (commentId: string) => void;
+  addComment: (issueId: string, content: string) => Promise<Comment | null>;
+  updateComment: (commentId: string, content: string) => Promise<void>;
+  deleteComment: (commentId: string) => Promise<void>;
 
   // Label Actions
-  createLabel: (projectId: string, name: string, color?: string) => Label;
+  fetchLabels: (projectId: string, silent?: boolean) => Promise<void>;
+  createLabel: (projectId: string, name: string) => Promise<Label | null>;
 }
 
-export const useIssueStore = create<IssueState>()(
-  persist(
-    (set, get) => ({
-      issues: INITIAL_ISSUES,
-      comments: INITIAL_COMMENTS,
-      labels: INITIAL_LABELS,
-      activities: INITIAL_ACTIVITIES,
+export const useIssueStore = create<IssueState>((set, get) => ({
+  issues: [],
+  comments: [],
+  labels: [],
+  activities: [],
+  currentIssueDetail: null,
+  isLoading: false,
+  error: null,
 
-      createIssue: (params) => {
-        const project = useProjectStore
-          .getState()
-          .projects.find((p) => p.id === params.projectId);
+  fetchIssues: async (projectId?: string, filters?: any, silent = false) => {
+    if (!silent) set({ isLoading: true, error: null });
+    try {
+      const res = await issueApi.getAll({
+        projectId,
+        limit: 100,
+        ...filters,
+      });
+      set({ issues: res.issues, isLoading: false });
+    } catch (err: any) {
+      if (!silent) {
+        set({ error: err.message || 'Failed to fetch issues', isLoading: false });
+      }
+    }
+  },
 
-        const projectKey = project ? project.key : 'TASK';
-        const currentIssuesCount = get().issues.filter(
-          (i) => i.projectId === params.projectId,
-        ).length;
+  fetchIssueDetail: async (id: string, silent = false) => {
+    if (!silent) set({ isLoading: true, error: null });
+    try {
+      const detail = await issueApi.getById(id);
+      set({
+        currentIssueDetail: detail,
+        comments: detail.comments || [],
+        activities: detail.activities || [],
+        isLoading: false,
+      });
+    } catch (err: any) {
+      if (!silent) {
+        set({ error: err.message || 'Failed to load issue details', isLoading: false });
+      }
+    }
+  },
 
-        const nextNumber = currentIssuesCount + 1;
-        const issueKey = `${projectKey}-${nextNumber}`;
+  createIssue: async (params: CreateIssueParams) => {
+    try {
+      const payload: CreateIssuePayload = {
+        projectId: params.projectId,
+        title: params.title,
+        description: params.description,
+        type: params.type,
+        status: params.status,
+        priority: params.priority,
+        assigneeId: params.assignee ? params.assignee.id : undefined,
+        dueDate: params.dueDate,
+        labelIds: params.labels ? params.labels.map((l) => l.id) : [],
+      };
 
-        const newIssue: Issue = {
-          id: `iss-${Date.now()}`,
-          issueKey,
-          title: params.title.trim(),
-          description: params.description?.trim(),
-          type: params.type,
-          status: params.status,
-          priority: params.priority,
-          dueDate: params.dueDate || null,
-          projectId: params.projectId,
-          reporterId: params.reporter.id,
-          reporter: params.reporter,
-          assigneeId: params.assignee ? params.assignee.id : null,
-          assignee: params.assignee || null,
-          labels: params.labels || [],
-          commentsCount: 0,
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-        };
+      const newIssue = await issueApi.create(payload);
+      set((state) => ({
+        issues: [newIssue, ...state.issues],
+      }));
+      return newIssue;
+    } catch (err: any) {
+      set({ error: err.message || 'Failed to create issue' });
+      return null;
+    }
+  },
 
-        const newActivity: Activity = {
-          id: `act-${Date.now()}`,
-          issueId: newIssue.id,
-          userId: params.reporter.id,
-          user: params.reporter,
-          action: 'ISSUE_CREATED',
-          newValue: `Issue ${issueKey} created as ${newIssue.type} with ${newIssue.priority} priority`,
-          createdAt: new Date().toISOString(),
-        };
+  updateIssue: async (issueId: string, updates: Partial<UpdateIssuePayload>) => {
+    try {
+      const updated = await issueApi.update(issueId, updates);
+      set((state) => ({
+        issues: state.issues.map((i) => (i.id === issueId ? updated : i)),
+        currentIssueDetail:
+          state.currentIssueDetail?.id === issueId
+            ? { ...state.currentIssueDetail, ...updated }
+            : state.currentIssueDetail,
+      }));
 
-        set((state) => ({
-          issues: [newIssue, ...state.issues],
-          activities: [newActivity, ...state.activities],
-        }));
+      // Refresh activity log for this issue
+      const activities = await issueApi.getActivities(issueId);
+      set({ activities });
+    } catch (err: any) {
+      set({ error: err.message || 'Failed to update issue' });
+    }
+  },
 
-        return newIssue;
-      },
+  moveIssueStatus: async (issueId: string, newStatus: IssueStatus) => {
+    const previousIssues = get().issues;
+    const current = previousIssues.find((i) => i.id === issueId);
+    if (!current || current.status === newStatus) return;
 
-      updateIssue: (issueId, updates, modifier) => {
-        const existing = get().issues.find((i) => i.id === issueId);
-        if (!existing) return;
+    // 1. Optimistic local update for instant UI feedback
+    set((state) => ({
+      issues: state.issues.map((i) =>
+        i.id === issueId ? { ...i, status: newStatus, updatedAt: new Date().toISOString() } : i,
+      ),
+    }));
 
-        const activitiesToAppend: Activity[] = [];
+    // 2. Persist change via API
+    try {
+      await issueApi.update(issueId, { status: newStatus });
+    } catch (err: any) {
+      // Revert upon failure
+      set({ issues: previousIssues, error: err.message || 'Failed to move issue' });
+    }
+  },
 
-        if (updates.status && updates.status !== existing.status) {
-          activitiesToAppend.push({
-            id: `act-${Date.now()}-status`,
-            issueId,
-            userId: modifier.id,
-            user: modifier,
-            action: 'STATUS_CHANGED',
-            oldValue: existing.status,
-            newValue: updates.status,
-            createdAt: new Date().toISOString(),
-          });
-        }
+  deleteIssue: async (issueId: string) => {
+    try {
+      await issueApi.delete(issueId);
+      set((state) => ({
+        issues: state.issues.filter((i) => i.id !== issueId),
+        currentIssueDetail:
+          state.currentIssueDetail?.id === issueId ? null : state.currentIssueDetail,
+      }));
+    } catch (err: any) {
+      set({ error: err.message || 'Failed to delete issue' });
+    }
+  },
 
-        if (updates.priority && updates.priority !== existing.priority) {
-          activitiesToAppend.push({
-            id: `act-${Date.now()}-priority`,
-            issueId,
-            userId: modifier.id,
-            user: modifier,
-            action: 'PRIORITY_CHANGED',
-            oldValue: existing.priority,
-            newValue: updates.priority,
-            createdAt: new Date().toISOString(),
-          });
-        }
+  addComment: async (issueId: string, content: string) => {
+    try {
+      const newComment = await commentApi.create(issueId, content);
+      set((state) => ({
+        comments: [...state.comments, newComment],
+        issues: state.issues.map((i) =>
+          i.id === issueId ? { ...i, commentsCount: (i.commentsCount || 0) + 1 } : i,
+        ),
+      }));
 
-        if (updates.assignee !== undefined && updates.assignee?.id !== existing.assignee?.id) {
-          activitiesToAppend.push({
-            id: `act-${Date.now()}-assignee`,
-            issueId,
-            userId: modifier.id,
-            user: modifier,
-            action: 'ASSIGNEE_CHANGED',
-            oldValue: existing.assignee?.name || 'Unassigned',
-            newValue: updates.assignee?.name || 'Unassigned',
-            createdAt: new Date().toISOString(),
-          });
-        }
+      // Refresh activity log
+      const activities = await issueApi.getActivities(issueId);
+      set({ activities });
 
-        set((state) => ({
-          issues: state.issues.map((issue) =>
-            issue.id === issueId
-              ? {
-                  ...issue,
-                  ...updates,
-                  updatedAt: new Date().toISOString(),
-                }
-              : issue,
-          ),
-          activities: [...activitiesToAppend, ...state.activities],
-        }));
-      },
+      return newComment;
+    } catch (err: any) {
+      set({ error: err.message || 'Failed to post comment' });
+      return null;
+    }
+  },
 
-      deleteIssue: (issueId) => {
-        set((state) => ({
-          issues: state.issues.filter((i) => i.id !== issueId),
-          comments: state.comments.filter((c) => c.issueId !== issueId),
-          activities: state.activities.filter((a) => a.issueId !== issueId),
-        }));
-      },
+  updateComment: async (commentId: string, content: string) => {
+    try {
+      const updated = await commentApi.update(commentId, content);
+      set((state) => ({
+        comments: state.comments.map((c) => (c.id === commentId ? updated : c)),
+      }));
+    } catch (err: any) {
+      set({ error: err.message || 'Failed to update comment' });
+    }
+  },
 
-      moveIssueStatus: (issueId, newStatus, modifier) => {
-        const existing = get().issues.find((i) => i.id === issueId);
-        if (!existing || existing.status === newStatus) return;
+  deleteComment: async (commentId: string) => {
+    try {
+      await commentApi.delete(commentId);
+      set((state) => ({
+        comments: state.comments.filter((c) => c.id !== commentId),
+      }));
+    } catch (err: any) {
+      set({ error: err.message || 'Failed to delete comment' });
+    }
+  },
 
-        const newActivity: Activity = {
-          id: `act-${Date.now()}-move`,
-          issueId,
-          userId: modifier.id,
-          user: modifier,
-          action: 'STATUS_CHANGED',
-          oldValue: existing.status,
-          newValue: newStatus,
-          createdAt: new Date().toISOString(),
-        };
+  fetchLabels: async (projectId: string) => {
+    try {
+      const labels = await projectApi.getLabels(projectId);
+      set({ labels });
+    } catch (err: any) {
+      set({ error: err.message || 'Failed to fetch labels' });
+    }
+  },
 
-        set((state) => ({
-          issues: state.issues.map((i) =>
-            i.id === issueId
-              ? {
-                  ...i,
-                  status: newStatus,
-                  updatedAt: new Date().toISOString(),
-                }
-              : i,
-          ),
-          activities: [newActivity, ...state.activities],
-        }));
-      },
-
-      addComment: (issueId, author, content) => {
-        const newComment: Comment = {
-          id: `cmt-${Date.now()}`,
-          content: content.trim(),
-          issueId,
-          authorId: author.id,
-          author,
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-        };
-
-        const newActivity: Activity = {
-          id: `act-${Date.now()}-comment`,
-          issueId,
-          userId: author.id,
-          user: author,
-          action: 'COMMENT_ADDED',
-          newValue: content.length > 60 ? content.slice(0, 57) + '...' : content,
-          createdAt: new Date().toISOString(),
-        };
-
-        set((state) => ({
-          comments: [...state.comments, newComment],
-          activities: [newActivity, ...state.activities],
-          issues: state.issues.map((i) =>
-            i.id === issueId
-              ? {
-                  ...i,
-                  commentsCount: (i.commentsCount || 0) + 1,
-                  updatedAt: new Date().toISOString(),
-                }
-              : i,
-          ),
-        }));
-
-        return newComment;
-      },
-
-      updateComment: (commentId, content) => {
-        set((state) => ({
-          comments: state.comments.map((c) =>
-            c.id === commentId
-              ? {
-                  ...c,
-                  content: content.trim(),
-                  updatedAt: new Date().toISOString(),
-                }
-              : c,
-          ),
-        }));
-      },
-
-      deleteComment: (commentId) => {
-        const comment = get().comments.find((c) => c.id === commentId);
-        set((state) => ({
-          comments: state.comments.filter((c) => c.id !== commentId),
-          issues: comment
-            ? state.issues.map((i) =>
-                i.id === comment.issueId
-                  ? {
-                      ...i,
-                      commentsCount: Math.max(0, (i.commentsCount || 1) - 1),
-                    }
-                  : i,
-              )
-            : state.issues,
-        }));
-      },
-
-      createLabel: (projectId, name, color = '#3b82f6') => {
-        const newLabel: Label = {
-          id: `lbl-${Date.now()}`,
-          name: name.trim().toLowerCase(),
-          projectId,
-          color,
-        };
-
-        set((state) => ({
-          labels: [...state.labels, newLabel],
-        }));
-
-        return newLabel;
-      },
-    }),
-    {
-      name: 'taskboard_issues_v1',
-    },
-  ),
-);
+  createLabel: async (projectId: string, name: string) => {
+    try {
+      const newLabel = await projectApi.createLabel(projectId, name);
+      set((state) => ({ labels: [...state.labels, newLabel] }));
+      return newLabel;
+    } catch (err: any) {
+      set({ error: err.message || 'Failed to create label' });
+      return null;
+    }
+  },
+}));

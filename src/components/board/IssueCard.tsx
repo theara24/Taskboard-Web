@@ -27,15 +27,15 @@ export const IssueCard: React.FC<IssueCardProps> = ({ issue, index, onClick }) =
           {...provided.dragHandleProps}
           onClick={onClick}
           className={cn(
-            'group rounded-xl border border-slate-200 bg-white p-3.5 shadow-xs hover:border-slate-300 hover:shadow-md transition-all cursor-pointer select-none mb-2.5',
-            snapshot.isDragging && 'rotate-1 shadow-xl ring-2 ring-brand-500/20 border-brand-500',
+            'group rounded-xl border border-slate-200 dark:border-slate-700/80 bg-white dark:bg-slate-800 p-3.5 shadow-xs hover:border-slate-300 dark:hover:border-slate-600 hover:shadow-md dark:hover:shadow-slate-900/40 transition-all cursor-pointer select-none mb-2.5',
+            snapshot.isDragging && 'rotate-1 shadow-xl ring-2 ring-blue-500/20 border-blue-500',
           )}
         >
           {/* Top Row: Type, Issue Key, Priority */}
           <div className="flex items-center justify-between gap-2 mb-2">
             <div className="flex items-center gap-1.5">
               <IssueTypeBadge type={issue.type} />
-              <span className="text-xs font-mono font-bold text-slate-500 group-hover:text-brand-600 transition-colors">
+              <span className="text-xs font-mono font-bold text-slate-500 dark:text-slate-400 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
                 {issue.issueKey}
               </span>
             </div>
@@ -43,7 +43,7 @@ export const IssueCard: React.FC<IssueCardProps> = ({ issue, index, onClick }) =
           </div>
 
           {/* Title */}
-          <h4 className="text-sm font-semibold text-slate-800 line-clamp-2 mb-2 group-hover:text-slate-900 leading-snug">
+          <h4 className="text-sm font-semibold text-slate-800 dark:text-slate-100 line-clamp-2 mb-2 group-hover:text-slate-900 dark:group-hover:text-white leading-snug">
             {issue.title}
           </h4>
 
@@ -53,13 +53,13 @@ export const IssueCard: React.FC<IssueCardProps> = ({ issue, index, onClick }) =
               {issue.labels.slice(0, 3).map((l) => (
                 <span
                   key={l.id}
-                  className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-slate-100 text-slate-600 border border-slate-200"
+                  className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-slate-100 dark:bg-slate-700/80 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-600"
                 >
                   {l.name}
                 </span>
               ))}
               {issue.labels.length > 3 && (
-                <span className="text-[10px] text-slate-400 font-medium self-center">
+                <span className="text-[10px] text-slate-400 dark:text-slate-500 font-medium self-center">
                   +{issue.labels.length - 3}
                 </span>
               )}
@@ -67,13 +67,15 @@ export const IssueCard: React.FC<IssueCardProps> = ({ issue, index, onClick }) =
           )}
 
           {/* Bottom Row: Due Date, Comments, Assignee */}
-          <div className="flex items-center justify-between pt-2 border-t border-slate-100 text-xs text-slate-400">
+          <div className="flex items-center justify-between pt-2 border-t border-slate-100 dark:border-slate-700/80 text-xs text-slate-400 dark:text-slate-500">
             <div className="flex items-center gap-3">
               {issue.dueDate && (
                 <div
                   className={cn(
                     'flex items-center gap-1 text-[11px] font-medium',
-                    isOverdue ? 'text-rose-600 font-semibold' : 'text-slate-500',
+                    isOverdue
+                      ? 'text-rose-600 dark:text-rose-400 font-semibold'
+                      : 'text-slate-500 dark:text-slate-400',
                   )}
                   title={isOverdue ? 'Overdue!' : 'Due Date'}
                 >
@@ -88,7 +90,7 @@ export const IssueCard: React.FC<IssueCardProps> = ({ issue, index, onClick }) =
               )}
 
               {(issue.commentsCount || 0) > 0 && (
-                <div className="flex items-center gap-1 text-[11px] text-slate-500">
+                <div className="flex items-center gap-1 text-[11px] text-slate-500 dark:text-slate-400">
                   <MessageSquare className="w-3.5 h-3.5" />
                   <span>{issue.commentsCount}</span>
                 </div>

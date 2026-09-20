@@ -87,7 +87,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen = false, onClose }) => 
       {/* Mobile Backdrop */}
       {isOpen && (
         <div
-          className="fixed inset-0 z-40 bg-slate-900/40 backdrop-blur-xs md:hidden"
+          className="fixed inset-0 z-40 bg-slate-900/50 backdrop-blur-xs md:hidden"
           onClick={onClose}
         />
       )}
@@ -95,32 +95,32 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen = false, onClose }) => 
       {/* Sidebar Container */}
       <aside
         className={cn(
-          'fixed inset-y-0 left-0 z-40 w-64 border-r border-slate-200 bg-white flex flex-col justify-between transition-transform duration-200 ease-in-out md:static md:translate-x-0',
+          'fixed inset-y-0 left-0 z-40 w-64 border-r border-slate-200/80 dark:border-slate-800/80 bg-white dark:bg-slate-900 flex flex-col justify-between transition-all duration-200 ease-in-out md:static md:translate-x-0 md:z-0',
           isOpen ? 'translate-x-0' : '-translate-x-full',
         )}
       >
         <div className="flex-1 overflow-y-auto px-4 py-6">
           {/* Active Project Highlight Card */}
           {activeProject && (
-            <div className="mb-6 p-3 rounded-xl bg-slate-50 border border-slate-200/80">
-              <div className="flex items-center gap-2 mb-1">
-                <div className="p-1.5 rounded-lg bg-brand-50 text-brand-600">
+            <div className="mb-6 p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-700/80 transition-colors">
+              <div className="flex items-center gap-2 mb-1.5">
+                <div className="p-1.5 rounded-lg bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400">
                   <Layers className="w-4 h-4" />
                 </div>
-                <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
                   Active Project
                 </span>
               </div>
-              <h4 className="text-sm font-bold text-slate-900 truncate">
+              <h4 className="text-sm font-bold text-slate-900 dark:text-white truncate">
                 {activeProject.name}
               </h4>
-              <div className="flex items-center justify-between mt-2 pt-2 border-t border-slate-200/60 text-xs text-slate-500">
-                <span className="font-mono bg-white border border-slate-200 px-1.5 py-0.2 rounded font-semibold text-slate-700">
+              <div className="flex items-center justify-between mt-2 pt-2 border-t border-slate-200/60 dark:border-slate-700/60 text-xs text-slate-500 dark:text-slate-400">
+                <span className="font-mono bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 px-1.5 py-0.5 rounded font-semibold text-slate-700 dark:text-slate-200">
                   {activeProject.key}
                 </span>
                 <span className="flex items-center gap-1">
-                  <Users className="w-3.5 h-3.5" />
-                  {activeProject.members.length} members
+                  <Users className="w-3.5 h-3.5 text-slate-400" />
+                  {activeProject.members?.length ?? 0} members
                 </span>
               </div>
             </div>
@@ -132,7 +132,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen = false, onClose }) => 
               if (group.items.length === 0) return null;
               return (
                 <div key={group.label}>
-                  <div className="px-3 mb-2 text-[11px] font-bold uppercase tracking-wider text-slate-400">
+                  <div className="px-3 mb-2 text-[11px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
                     {group.label}
                   </div>
                   <div className="space-y-1">
@@ -145,17 +145,17 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen = false, onClose }) => 
                           cn(
                             'flex items-center justify-between px-3 py-2 rounded-xl text-sm font-medium transition-all group',
                             isActive
-                              ? 'bg-brand-50 text-brand-700 font-semibold shadow-xs'
-                              : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900',
+                              ? 'bg-blue-50 dark:bg-blue-950/50 text-blue-700 dark:text-blue-300 font-semibold shadow-xs'
+                              : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/60 hover:text-slate-900 dark:hover:text-slate-100',
                           )
                         }
                       >
                         <div className="flex items-center gap-3">
-                          <item.icon className="w-4 h-4 text-slate-400 group-hover:text-slate-600 transition-colors" />
+                          <item.icon className="w-4 h-4 text-slate-400 dark:text-slate-500 group-hover:text-slate-600 dark:group-hover:text-slate-300 transition-colors" />
                           <span>{item.name}</span>
                         </div>
                         {item.badge !== undefined && (
-                          <span className="px-2 py-0.5 text-xs font-medium rounded-full bg-slate-100 text-slate-600">
+                          <span className="px-2 py-0.5 text-xs font-medium rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300">
                             {item.badge}
                           </span>
                         )}
@@ -169,8 +169,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen = false, onClose }) => 
         </div>
 
         {/* Footer info */}
-        <div className="p-4 border-t border-slate-100 bg-slate-50/50 text-[11px] text-slate-400 text-center">
-          TaskBoard v1.0.0 • Academic Edition
+        <div className="p-4 border-t border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50 text-[11px] text-slate-400 dark:text-slate-500 text-center">
+          TaskBoard • Production Edition
         </div>
       </aside>
     </>

@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useEffect, useMemo } from 'react';
 import { useParams, Navigate } from 'react-router-dom';
 import { useProjectStore } from '../store/projectStore';
 import { useIssueStore } from '../store/issueStore';
@@ -7,25 +7,57 @@ import { KanbanBoard } from '../components/board/KanbanBoard';
 import { FilterBar } from '../components/issues/FilterBar';
 import { Button } from '../components/common/Button';
 import { UserAvatar } from '../components/common/UserAvatar';
-import { Plus, Users } from 'lucide-react';
+import { Plus, Loader2 } from 'lucide-react';
 
 export const KanbanBoardPage: React.FC = () => {
   const { projectId } = useParams<{ projectId: string }>();
-  const { projects } = useProjectStore();
-  const { issues } = useIssueStore();
+  const { projects, isLoading: projectsLoading, fetchProjects, setActiveProject } = useProjectStore();
+  const { issues, isLoading: issuesLoading, fetchIssues, fetchLabels } = useIssueStore();
   const { filters, searchQuery, openCreateIssueModal } = useUIStore();
+
+  useEffect(() => {
+    if (projects.length === 0) {
+      fetchProjects();
+    }
+  }, [fetchProjects, projects.length]);
+
+  useEffect(() => {
+    if (projectId) {
+      setActiveProject(projectId);
+      fetchIssues(projectId);
+      fetchLabels(projectId);
+
+      const handleFocus = () => {
+        if (!document.hidden) {
+          fetchIssues(projectId, undefined, true);
+          fetchLabels(projectId);
+        }
+      };
+
+      window.addEventListener('focus', handleFocus);
+      document.addEventListener('visibilitychange', handleFocus);
+
+      const interval = setInterval(() => {
+        if (!document.hidden) {
+          fetchIssues(projectId, undefined, true);
+          fetchLabels(projectId);
+        }
+      }, 4000);
+
+      return () => {
+        window.removeEventListener('focus', handleFocus);
+        document.removeEventListener('visibilitychange', handleFocus);
+        clearInterval(interval);
+      };
+    }
+  }, [projectId, setActiveProject, fetchIssues, fetchLabels]);
 
   const project = projects.find((p) => p.id === projectId);
 
-  // If project doesn't exist, redirect to projects page
-  if (!project) {
-    return <Navigate to="/projects" replace />;
-  }
-
   // Filter project issues
   const allProjectIssues = useMemo(() => {
-    return issues.filter((i) => i.projectId === project.id);
-  }, [issues, project.id]);
+    return issues.filter((i) => i.projectId === projectId);
+  }, [issues, projectId]);
 
   const filteredIssues = useMemo(() => {
     return allProjectIssues.filter((issue) => {
@@ -79,18 +111,39 @@ export const KanbanBoardPage: React.FC = () => {
     });
   }, [allProjectIssues, searchQuery, filters]);
 
+  if (projectsLoading && !project) {
+    return (
+      <div className="flex items-center justify-center p-16">
+        <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
+      </div>
+    );
+  }
+
+  // If projects are loaded but this project doesn't exist, redirect to projects page
+  if (!projectsLoading && projects.length > 0 && !project) {
+    return <Navigate to="/projects" replace />;
+  }
+
+  if (!project) {
+    return (
+      <div className="flex items-center justify-center p-16">
+        <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       {/* Board Header */}
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2 mb-1">
-            <span className="text-xs font-mono font-bold px-2 py-0.5 rounded bg-slate-200 text-slate-700">
+            <span className="text-xs font-mono font-bold px-2 py-0.5 rounded bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200">
               {project.key}
             </span>
             <span className="text-xs text-slate-400">• Kanban Board</span>
           </div>
-          <h1 className="text-2xl font-bold text-slate-900 tracking-tight">
+          <h1 className="text-2xl font-bold text-slate-900 dark:text-white tracking-tight">
             {project.name}
           </h1>
         </div>
@@ -98,9 +151,9 @@ export const KanbanBoardPage: React.FC = () => {
         {/* Right side: Member Avatars and Create Button */}
         <div className="flex items-center gap-4">
           <div className="flex items-center -space-x-2 overflow-hidden py-1">
-            {project.members.map((m) => (
-              <div key={m.userId} title={`${m.user.name} (${m.role})`}>
-                <UserAvatar user={m.user} size="sm" className="ring-2 ring-white" />
+            {(project.members || []).map((m) => (
+              <div key={m.userId} title={`${m.user?.name || 'Member'} (${m.role})`}>
+                <UserAvatar user={m.user} size="sm" className="ring-2 ring-white dark:ring-slate-800" />
               </div>
             ))}
           </div>
@@ -109,6 +162,7 @@ export const KanbanBoardPage: React.FC = () => {
             variant="primary"
             onClick={openCreateIssueModal}
             leftIcon={<Plus className="w-4 h-4" />}
+            className="bg-blue-600 hover:bg-blue-700 text-white"
           >
             Create Issue
           </Button>
@@ -123,7 +177,13 @@ export const KanbanBoardPage: React.FC = () => {
       />
 
       {/* Kanban Board Container with Dnd */}
-      <KanbanBoard issues={filteredIssues} />
+      {issuesLoading && filteredIssues.length === 0 ? (
+        <div className="flex items-center justify-center p-16">
+          <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
+        </div>
+      ) : (
+        <KanbanBoard issues={filteredIssues} />
+      )}
     </div>
   );
 };

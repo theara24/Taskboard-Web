@@ -48,21 +48,21 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({ project, onEdit }) => 
 
   return (
     <>
-      <div className="flex flex-col justify-between rounded-2xl border border-slate-200 bg-white p-5 shadow-xs hover:shadow-md hover:border-slate-300 transition-all group">
+      <div className="flex flex-col justify-between rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-xs hover:shadow-md hover:border-slate-300 dark:hover:border-slate-700 transition-all group">
         {/* Header: Icon, Key, Title, Menu */}
         <div>
           <div className="flex items-start justify-between gap-3 mb-3">
             <div className="flex items-center gap-2.5">
-              <div className="w-10 h-10 rounded-xl bg-brand-50 text-brand-600 flex items-center justify-center font-bold text-sm shadow-xs">
+              <div className="w-10 h-10 rounded-xl bg-brand-50 dark:bg-brand-950/50 text-brand-600 dark:text-brand-400 flex items-center justify-center font-bold text-sm shadow-xs">
                 <FolderKanban className="w-5 h-5" />
               </div>
               <div>
-                <span className="text-xs font-mono font-bold px-2 py-0.5 rounded bg-slate-100 text-slate-700">
+                <span className="text-xs font-mono font-bold px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300">
                   {project.key}
                 </span>
                 <h3
                   onClick={handleOpen}
-                  className="font-bold text-slate-900 mt-1 hover:text-brand-600 transition-colors cursor-pointer line-clamp-1"
+                  className="font-bold text-slate-900 dark:text-white mt-1 hover:text-brand-600 dark:hover:text-brand-400 transition-colors cursor-pointer line-clamp-1"
                 >
                   {project.name}
                 </h3>
@@ -73,7 +73,7 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({ project, onEdit }) => 
             <div className="relative">
               <button
                 onClick={() => setIsMenuOpen(!isMenuOpen)}
-                className="p-1 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors"
+                className="p-1 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
               >
                 <MoreVertical className="w-4 h-4" />
               </button>
@@ -84,13 +84,13 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({ project, onEdit }) => 
                     className="fixed inset-0 z-10"
                     onClick={() => setIsMenuOpen(false)}
                   />
-                  <div className="absolute right-0 mt-1 w-36 rounded-xl border border-slate-200 bg-white shadow-lg z-20 py-1 text-xs">
+                  <div className="absolute right-0 mt-1 w-36 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-800 shadow-lg z-20 py-1 text-xs">
                     <button
                       onClick={() => {
                         setIsMenuOpen(false);
                         onEdit(project);
                       }}
-                      className="flex items-center gap-2 w-full px-3 py-2 text-slate-700 hover:bg-slate-50"
+                      className="flex items-center gap-2 w-full px-3 py-2 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700/60"
                     >
                       <Edit2 className="w-3.5 h-3.5" />
                       Edit Project
@@ -100,7 +100,7 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({ project, onEdit }) => 
                         setIsMenuOpen(false);
                         setIsConfirmDeleteOpen(true);
                       }}
-                      className="flex items-center gap-2 w-full px-3 py-2 text-rose-600 hover:bg-rose-50"
+                      className="flex items-center gap-2 w-full px-3 py-2 text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
                       Delete Project
@@ -112,20 +112,20 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({ project, onEdit }) => 
           </div>
 
           {/* Description */}
-          <p className="text-xs text-slate-500 line-clamp-2 min-h-[32px] leading-relaxed mb-4">
+          <p className="text-xs text-slate-500 dark:text-slate-400 line-clamp-2 min-h-[32px] leading-relaxed mb-4">
             {project.description || 'No description provided.'}
           </p>
 
           {/* Progress Bar */}
           <div className="mb-4 space-y-1.5">
-            <div className="flex items-center justify-between text-xs font-semibold text-slate-600">
+            <div className="flex items-center justify-between text-xs font-semibold text-slate-600 dark:text-slate-300">
               <span className="flex items-center gap-1">
                 <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
                 Progress
               </span>
               <span>{progressPercent}%</span>
             </div>
-            <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden">
+            <div className="h-2 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
               <div
                 className="h-full bg-emerald-500 rounded-full transition-all duration-300"
                 style={{ width: `${progressPercent}%` }}
@@ -135,20 +135,20 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({ project, onEdit }) => 
         </div>
 
         {/* Footer: Issues count, Members, Open Button */}
-        <div className="pt-3 border-t border-slate-100 flex items-center justify-between">
-          <div className="flex items-center gap-4 text-xs text-slate-500">
+        <div className="pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
+          <div className="flex items-center gap-4 text-xs text-slate-500 dark:text-slate-400">
             <span>
-              <strong className="text-slate-800">{totalCount}</strong> issues
+              <strong className="text-slate-800 dark:text-slate-200">{totalCount}</strong> issues
             </span>
             <span className="flex items-center gap-1">
               <Users className="w-3.5 h-3.5" />
-              {project.members.length}
+              {project.members?.length ?? (project as any)._count?.members ?? 0}
             </span>
           </div>
 
           <button
             onClick={handleOpen}
-            className="flex items-center gap-1 text-xs font-semibold text-brand-600 hover:text-brand-800 transition-colors"
+            className="flex items-center gap-1 text-xs font-semibold text-brand-600 dark:text-brand-400 hover:text-brand-800 dark:hover:text-brand-300 transition-colors"
           >
             Open Board
             <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />

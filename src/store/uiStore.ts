@@ -1,7 +1,10 @@
 import { create } from 'zustand';
 import { IssueFilters, ToastMessage } from '../types';
 
+export type Theme = 'light' | 'dark';
+
 interface UIState {
+  theme: Theme;
   searchQuery: string;
   filters: IssueFilters;
   isCreateIssueModalOpen: boolean;
@@ -10,6 +13,8 @@ interface UIState {
   toasts: ToastMessage[];
 
   // Actions
+  toggleTheme: () => void;
+  setTheme: (theme: Theme) => void;
   setSearchQuery: (query: string) => void;
   setFilter: <K extends keyof IssueFilters>(key: K, value: IssueFilters[K]) => void;
   resetFilters: () => void;
@@ -32,13 +37,47 @@ const DEFAULT_FILTERS: IssueFilters = {
   sortOrder: 'desc',
 };
 
+function getInitialTheme(): Theme {
+  if (typeof window === 'undefined') return 'light';
+  const stored = localStorage.getItem('taskboard_theme');
+  if (stored === 'dark' || stored === 'light') return stored;
+  return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+}
+
 export const useUIStore = create<UIState>((set) => ({
+  theme: getInitialTheme(),
   searchQuery: '',
   filters: DEFAULT_FILTERS,
   isCreateIssueModalOpen: false,
   isCreateProjectModalOpen: false,
   selectedIssueId: null,
   toasts: [],
+
+  toggleTheme: () =>
+    set((state) => {
+      const next: Theme = state.theme === 'light' ? 'dark' : 'light';
+      localStorage.setItem('taskboard_theme', next);
+      if (typeof document !== 'undefined') {
+        if (next === 'dark') {
+          document.documentElement.classList.add('dark');
+        } else {
+          document.documentElement.classList.remove('dark');
+        }
+      }
+      return { theme: next };
+    }),
+
+  setTheme: (theme: Theme) => {
+    localStorage.setItem('taskboard_theme', theme);
+    if (typeof document !== 'undefined') {
+      if (theme === 'dark') {
+        document.documentElement.classList.add('dark');
+      } else {
+        document.documentElement.classList.remove('dark');
+      }
+    }
+    set({ theme });
+  },
 
   setSearchQuery: (query: string) => set({ searchQuery: query }),
 

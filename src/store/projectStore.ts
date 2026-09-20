@@ -1,132 +1,129 @@
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
-import { Project, User, ProjectMemberRole } from '../types';
-import { INITIAL_PROJECTS } from '../mock/initial-data';
+import { Project, ProjectMemberRole } from '../types';
+import { projectApi } from '../api';
 
 interface ProjectState {
   projects: Project[];
   activeProjectId: string;
+  isLoading: boolean;
+  error: string | null;
+
+  fetchProjects: (silent?: boolean) => Promise<void>;
   setActiveProject: (id: string) => void;
-  createProject: (name: string, key: string, description: string, owner: User) => Project;
-  updateProject: (id: string, data: Partial<Pick<Project, 'name' | 'description'>>) => void;
-  deleteProject: (id: string) => void;
-  addMember: (projectId: string, user: User, role?: ProjectMemberRole) => boolean;
-  removeMember: (projectId: string, userId: string) => void;
+  createProject: (name: string, key: string, description: string) => Promise<Project | null>;
+  updateProject: (id: string, data: { name?: string; description?: string }) => Promise<void>;
+  deleteProject: (id: string) => Promise<void>;
+  addMember: (projectId: string, userId: string, role?: ProjectMemberRole) => Promise<boolean>;
+  removeMember: (projectId: string, userId: string) => Promise<void>;
 }
 
-export const useProjectStore = create<ProjectState>()(
-  persist(
-    (set, get) => ({
-      projects: INITIAL_PROJECTS,
-      activeProjectId: INITIAL_PROJECTS[0].id,
+export const useProjectStore = create<ProjectState>((set, get) => ({
+  projects: [],
+  activeProjectId: '',
+  isLoading: false,
+  error: null,
 
-      setActiveProject: (id: string) => {
-        set({ activeProjectId: id });
-      },
+  fetchProjects: async (silent = false) => {
+    if (!silent) set({ isLoading: true, error: null });
+    try {
+      const projects = await projectApi.getAll();
+      const currentActive = get().activeProjectId;
+      const validActive = projects.some((p) => p.id === currentActive)
+        ? currentActive
+        : projects[0]?.id || '';
 
-      createProject: (name: string, key: string, description: string, owner: User) => {
-        const uppercaseKey = key.toUpperCase().trim();
-        const newProject: Project = {
-          id: `proj-${Date.now()}`,
-          name: name.trim(),
-          key: uppercaseKey,
-          description: description.trim(),
-          ownerId: owner.id,
-          owner,
-          issueCounter: 0,
-          members: [
-            {
-              id: `mem-${Date.now()}`,
-              projectId: `proj-${Date.now()}`,
-              userId: owner.id,
-              role: 'OWNER',
-              joinedAt: new Date().toISOString(),
-              user: owner,
-            },
-          ],
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-        };
-
-        set((state) => ({
-          projects: [newProject, ...state.projects],
-          activeProjectId: newProject.id,
-        }));
-
-        return newProject;
-      },
-
-      updateProject: (id: string, data) => {
-        set((state) => ({
-          projects: state.projects.map((p) =>
-            p.id === id
-              ? {
-                  ...p,
-                  ...data,
-                  updatedAt: new Date().toISOString(),
-                }
-              : p,
-          ),
-        }));
-      },
-
-      deleteProject: (id: string) => {
-        set((state) => {
-          const remaining = state.projects.filter((p) => p.id !== id);
-          return {
-            projects: remaining,
-            activeProjectId: remaining.length > 0 ? remaining[0].id : '',
-          };
+      set({
+        projects,
+        activeProjectId: validActive,
+        isLoading: false,
+      });
+    } catch (err: any) {
+      if (!silent) {
+        set({
+          error: err.message || 'Failed to fetch projects',
+          isLoading: false,
         });
-      },
+      }
+    }
+  },
 
-      addMember: (projectId: string, user: User, role: ProjectMemberRole = 'MEMBER') => {
-        const project = get().projects.find((p) => p.id === projectId);
-        if (!project) return false;
+  setActiveProject: (id: string) => {
+    set({ activeProjectId: id });
+  },
 
-        const alreadyMember = project.members.some((m) => m.userId === user.id);
-        if (alreadyMember) return false;
+  createProject: async (name: string, key: string, description: string) => {
+    set({ isLoading: true, error: null });
+    try {
+      const newProj = await projectApi.create({
+        name: name.trim(),
+        key: key.toUpperCase().trim(),
+        description: description.trim(),
+      });
 
-        const newMember = {
-          id: `mem-${Date.now()}`,
-          projectId,
-          userId: user.id,
-          role,
-          joinedAt: new Date().toISOString(),
-          user,
+      // Reload all projects to get full member relations
+      const all = await projectApi.getAll();
+      set({
+        projects: all,
+        activeProjectId: newProj.id,
+        isLoading: false,
+      });
+
+      return newProj;
+    } catch (err: any) {
+      set({
+        error: err.message || 'Failed to create project',
+        isLoading: false,
+      });
+      return null;
+    }
+  },
+
+  updateProject: async (id: string, data) => {
+    try {
+      const updated = await projectApi.update(id, data);
+      set((state) => ({
+        projects: state.projects.map((p) => (p.id === id ? { ...p, ...updated } : p)),
+      }));
+    } catch (err: any) {
+      set({ error: err.message || 'Failed to update project' });
+    }
+  },
+
+  deleteProject: async (id: string) => {
+    try {
+      await projectApi.delete(id);
+      set((state) => {
+        const remaining = state.projects.filter((p) => p.id !== id);
+        return {
+          projects: remaining,
+          activeProjectId: remaining[0]?.id || '',
         };
+      });
+    } catch (err: any) {
+      set({ error: err.message || 'Failed to delete project' });
+    }
+  },
 
-        set((state) => ({
-          projects: state.projects.map((p) =>
-            p.id === projectId
-              ? {
-                  ...p,
-                  members: [...p.members, newMember],
-                  updatedAt: new Date().toISOString(),
-                }
-              : p,
-          ),
-        }));
+  addMember: async (projectId: string, userId: string, role: ProjectMemberRole = 'MEMBER') => {
+    try {
+      await projectApi.addMember(projectId, userId, role);
+      // Reload projects to get refreshed members list
+      const projects = await projectApi.getAll();
+      set({ projects });
+      return true;
+    } catch (err: any) {
+      set({ error: err.message || 'Failed to add member' });
+      return false;
+    }
+  },
 
-        return true;
-      },
-
-      removeMember: (projectId: string, userId: string) => {
-        set((state) => ({
-          projects: state.projects.map((p) => {
-            if (p.id !== projectId) return p;
-            if (p.ownerId === userId) return p; // Cannot remove project owner
-            return {
-              ...p,
-              members: p.members.filter((m) => m.userId !== userId),
-              updatedAt: new Date().toISOString(),
-            };
-          }),
-        }));
-      },
-    }),
-    {
-      name: 'taskboard_projects_v1',
-    },
-  ),
-);
+  removeMember: async (projectId: string, userId: string) => {
+    try {
+      await projectApi.removeMember(projectId, userId);
+      const projects = await projectApi.getAll();
+      set({ projects });
+    } catch (err: any) {
+      set({ error: err.message || 'Failed to remove member' });
+    }
+  },
+}));

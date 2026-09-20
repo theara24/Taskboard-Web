@@ -30,12 +30,12 @@ export const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
     <Modal isOpen={isOpen} onClose={onClose} title={title} maxWidth="sm">
       <div className="flex items-start gap-4">
         {isDestructive && (
-          <div className="p-3 bg-rose-100 text-rose-600 rounded-full shrink-0">
+          <div className="p-3 bg-rose-100 dark:bg-rose-950/50 text-rose-600 dark:text-rose-400 rounded-full shrink-0">
             <AlertTriangle className="w-6 h-6" />
           </div>
         )}
         <div className="flex-1">
-          <p className="text-sm text-slate-600">{message}</p>
+          <p className="text-sm text-slate-600 dark:text-slate-300">{message}</p>
         </div>
       </div>
 

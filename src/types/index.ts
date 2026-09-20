@@ -102,3 +102,51 @@ export interface ToastMessage {
   type: 'success' | 'error' | 'info' | 'warning';
   message: string;
 }
+
+export type NotificationType =
+  | 'PROJECT_INVITATION'
+  | 'INVITATION_ACCEPTED'
+  | 'INVITATION_DECLINED'
+  | 'ISSUE_ASSIGNED'
+  | 'SYSTEM';
+
+export interface Notification {
+  id: string;
+  userId: string;
+  type: NotificationType;
+  title: string;
+  message: string;
+  data?: {
+    invitationId?: string;
+    projectId?: string;
+    projectName?: string;
+    projectKey?: string;
+    inviterName?: string;
+    role?: string;
+    [key: string]: any;
+  };
+  isRead: boolean;
+  createdAt: string;
+}
+
+export interface ProjectInvitation {
+  id: string;
+  projectId: string;
+  inviterId: string;
+  inviteeEmail: string;
+  inviteeId?: string | null;
+  role: ProjectMemberRole;
+  status: 'PENDING' | 'ACCEPTED' | 'DECLINED';
+  createdAt: string;
+  updatedAt: string;
+  project?: {
+    id: string;
+    name: string;
+    key: string;
+  };
+  inviter?: {
+    id: string;
+    name: string;
+    email: string;
+  };
+}

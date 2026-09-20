@@ -32,7 +32,7 @@ export const FilterBar: React.FC<FilterBarProps> = ({
     Boolean(searchQuery);
 
   return (
-    <div className="bg-white rounded-2xl p-4 border border-slate-200 shadow-xs mb-6 space-y-3">
+    <div className="bg-white dark:bg-slate-900 rounded-2xl p-4 border border-slate-200 dark:border-slate-800 shadow-xs mb-6 space-y-3">
       {/* Top Filter Row: Search & Dropdowns */}
       <div className="flex flex-wrap items-center justify-between gap-3">
         {/* Search */}
@@ -43,7 +43,7 @@ export const FilterBar: React.FC<FilterBarProps> = ({
             placeholder="Search by key, title, summary..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full rounded-xl border border-slate-200 py-1.5 pl-9 pr-3 text-xs md:text-sm text-slate-800 placeholder-slate-400 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+            className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 py-1.5 pl-9 pr-3 text-xs md:text-sm text-slate-800 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
           />
         </div>
 
@@ -53,7 +53,7 @@ export const FilterBar: React.FC<FilterBarProps> = ({
           <select
             value={filters.status}
             onChange={(e) => setFilter('status', e.target.value as IssueStatus | 'ALL')}
-            className="text-xs rounded-xl border border-slate-200 bg-slate-50 py-1.5 px-3 text-slate-700 font-medium focus:outline-none focus:ring-1 focus:ring-brand-500"
+            className="text-xs rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 py-1.5 px-3 text-slate-700 dark:text-slate-200 font-medium focus:outline-none focus:ring-1 focus:ring-brand-500"
           >
             <option value="ALL">Status: All</option>
             <option value="BACKLOG">Backlog</option>
@@ -66,7 +66,7 @@ export const FilterBar: React.FC<FilterBarProps> = ({
           <select
             value={filters.priority}
             onChange={(e) => setFilter('priority', e.target.value as IssuePriority | 'ALL')}
-            className="text-xs rounded-xl border border-slate-200 bg-slate-50 py-1.5 px-3 text-slate-700 font-medium focus:outline-none focus:ring-1 focus:ring-brand-500"
+            className="text-xs rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 py-1.5 px-3 text-slate-700 dark:text-slate-200 font-medium focus:outline-none focus:ring-1 focus:ring-brand-500"
           >
             <option value="ALL">Priority: All</option>
             <option value="CRITICAL">Critical</option>
@@ -79,7 +79,7 @@ export const FilterBar: React.FC<FilterBarProps> = ({
           <select
             value={filters.type}
             onChange={(e) => setFilter('type', e.target.value as IssueType | 'ALL')}
-            className="text-xs rounded-xl border border-slate-200 bg-slate-50 py-1.5 px-3 text-slate-700 font-medium focus:outline-none focus:ring-1 focus:ring-brand-500"
+            className="text-xs rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 py-1.5 px-3 text-slate-700 dark:text-slate-200 font-medium focus:outline-none focus:ring-1 focus:ring-brand-500"
           >
             <option value="ALL">Type: All</option>
             <option value="TASK">Task</option>
@@ -91,10 +91,10 @@ export const FilterBar: React.FC<FilterBarProps> = ({
           <select
             value={filters.assigneeId}
             onChange={(e) => setFilter('assigneeId', e.target.value)}
-            className="text-xs rounded-xl border border-slate-200 bg-slate-50 py-1.5 px-3 text-slate-700 font-medium focus:outline-none focus:ring-1 focus:ring-brand-500"
+            className="text-xs rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 py-1.5 px-3 text-slate-700 dark:text-slate-200 font-medium focus:outline-none focus:ring-1 focus:ring-brand-500"
           >
             <option value="ALL">Assignee: All</option>
-            {project?.members.map((m) => (
+            {(project?.members || []).map((m) => (
               <option key={m.userId} value={m.userId}>
                 {m.user.name}
               </option>
@@ -106,7 +106,7 @@ export const FilterBar: React.FC<FilterBarProps> = ({
             <select
               value={filters.labelId}
               onChange={(e) => setFilter('labelId', e.target.value)}
-              className="text-xs rounded-xl border border-slate-200 bg-slate-50 py-1.5 px-3 text-slate-700 font-medium focus:outline-none focus:ring-1 focus:ring-brand-500"
+              className="text-xs rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 py-1.5 px-3 text-slate-700 dark:text-slate-200 font-medium focus:outline-none focus:ring-1 focus:ring-brand-500"
             >
               <option value="ALL">Label: All</option>
               {projectLabels.map((l) => (
@@ -118,12 +118,12 @@ export const FilterBar: React.FC<FilterBarProps> = ({
           )}
 
           {/* Sort By */}
-          <div className="flex items-center gap-1.5 border-l border-slate-200 pl-2">
+          <div className="flex items-center gap-1.5 border-l border-slate-200 dark:border-slate-700 pl-2">
             <ArrowUpDown className="w-3.5 h-3.5 text-slate-400" />
             <select
               value={filters.sortBy}
               onChange={(e) => setFilter('sortBy', e.target.value as any)}
-              className="text-xs rounded-xl border border-slate-200 bg-slate-50 py-1.5 px-2.5 text-slate-700 font-medium focus:outline-none"
+              className="text-xs rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 py-1.5 px-2.5 text-slate-700 dark:text-slate-200 font-medium focus:outline-none"
             >
               <option value="updatedAt">Updated Date</option>
               <option value="createdAt">Created Date</option>
@@ -136,19 +136,19 @@ export const FilterBar: React.FC<FilterBarProps> = ({
       </div>
 
       {/* Filter Status Bar: Result Count & Clear Button */}
-      <div className="flex items-center justify-between text-xs text-slate-500 pt-2 border-t border-slate-100">
+      <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 pt-2 border-t border-slate-100 dark:border-slate-800">
         <div className="flex items-center gap-2">
           <Filter className="w-3.5 h-3.5 text-slate-400" />
           <span>
-            Showing <strong className="text-slate-800">{totalFiltered}</strong> of{' '}
-            <strong className="text-slate-800">{totalIssues}</strong> issues
+            Showing <strong className="text-slate-800 dark:text-slate-200">{totalFiltered}</strong> of{' '}
+            <strong className="text-slate-800 dark:text-slate-200">{totalIssues}</strong> issues
           </span>
         </div>
 
         {hasActiveFilters && (
           <button
             onClick={resetFilters}
-            className="flex items-center gap-1 text-xs font-semibold text-brand-600 hover:text-brand-800 transition-colors"
+            className="flex items-center gap-1 text-xs font-semibold text-brand-600 dark:text-brand-400 hover:text-brand-800 dark:hover:text-brand-300 transition-colors"
           >
             <X className="w-3.5 h-3.5" />
             Reset all filters
