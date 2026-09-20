@@ -5,6 +5,7 @@ import { useUIStore } from '../../store/uiStore';
 import { Kanban, ArrowRight, Loader2 } from 'lucide-react';
 import { Button } from '../../components/common/Button';
 import { authApi } from '../../api';
+import { SEOHead } from '../../components/common/SEOHead';
 
 export const RegisterPage: React.FC = () => {
   const navigate = useNavigate();
@@ -48,6 +49,10 @@ export const RegisterPage: React.FC = () => {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-900 p-4 font-sans">
+      <SEOHead
+        title="Create Account"
+        description="Create a new TaskBoard account to organize agile work, collaborate with team members, and track software projects."
+      />
       <div className="max-w-md w-full">
         {/* Branding */}
         <div className="text-center mb-8">
@@ -102,11 +107,11 @@ export const RegisterPage: React.FC = () => {
           </div>
 
           <div className="relative flex items-center justify-center mb-6">
-            <div className="border-t border-slate-200 dark:border-slate-700 w-full" />
-            <span className="bg-white dark:bg-slate-800 px-3 text-xs text-slate-400 font-medium uppercase tracking-wider">
+            <div className="border-t border-slate-200 dark:border-slate-700 flex-1" />
+            <span className="px-3 text-xs text-slate-400 font-medium uppercase tracking-wider whitespace-nowrap shrink-0">
               or register with email
             </span>
-            <div className="border-t border-slate-200 dark:border-slate-700 w-full" />
+            <div className="border-t border-slate-200 dark:border-slate-700 flex-1" />
           </div>
 
           <form onSubmit={handleRegister} className="space-y-4">

@@ -8,6 +8,7 @@ import { FilterBar } from '../components/issues/FilterBar';
 import { Button } from '../components/common/Button';
 import { UserAvatar } from '../components/common/UserAvatar';
 import { Plus, Loader2 } from 'lucide-react';
+import { SEOHead } from '../components/common/SEOHead';
 
 export const KanbanBoardPage: React.FC = () => {
   const { projectId } = useParams<{ projectId: string }>();
@@ -134,6 +135,10 @@ export const KanbanBoardPage: React.FC = () => {
 
   return (
     <div className="space-y-6">
+      <SEOHead
+        title={`${project.name} (${project.key}) Board`}
+        description={project.description || `Agile Kanban board for ${project.name}. Track tasks, sprint status, and issue resolution.`}
+      />
       {/* Board Header */}
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>

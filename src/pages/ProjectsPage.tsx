@@ -6,6 +6,7 @@ import { ProjectFormModal } from '../components/projects/ProjectFormModal';
 import { Button } from '../components/common/Button';
 import { EmptyState } from '../components/common/EmptyState';
 import { Plus, Search, FolderKanban, Loader2 } from 'lucide-react';
+import { SEOHead } from '../components/common/SEOHead';
 import { Project } from '../types';
 
 export const ProjectsPage: React.FC = () => {
@@ -63,6 +64,7 @@ export const ProjectsPage: React.FC = () => {
 
   return (
     <div className="space-y-6">
+      <SEOHead title="Projects" description="View and manage all active projects, teams, and workspace repositories." />
       {/* Header */}
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>

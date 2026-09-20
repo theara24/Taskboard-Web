@@ -11,6 +11,20 @@ import { IssuesListPage } from './pages/IssuesListPage';
 import { ProjectSettingsPage } from './pages/ProjectSettingsPage';
 import { IssueDetailPage } from './pages/IssueDetailPage';
 import { ProfilePage } from './pages/ProfilePage';
+import { AdminDashboardPage } from './pages/AdminDashboardPage';
+import { AdminUsersPage } from './pages/AdminUsersPage';
+import { AdminProjectsPage } from './pages/AdminProjectsPage';
+import { AdminSupportPage } from './pages/AdminSupportPage';
+import { UserSupportPage } from './pages/UserSupportPage';
+import { useAuthStore } from './store/authStore';
+
+const AdminRouteGuard: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const { currentUser } = useAuthStore();
+  if (currentUser && currentUser.role !== 'ADMIN') {
+    return <Navigate to="/dashboard" replace />;
+  }
+  return <>{children}</>;
+};
 
 export const App: React.FC = () => {
   return (
@@ -36,6 +50,41 @@ export const App: React.FC = () => {
           <Route path="/projects/:projectId/settings" element={<ProjectSettingsPage />} />
           <Route path="/issues/:issueId" element={<IssueDetailPage />} />
           <Route path="/profile" element={<ProfilePage />} />
+          <Route path="/help" element={<UserSupportPage />} />
+
+          {/* Platform Administrator Routes */}
+          <Route
+            path="/admin"
+            element={
+              <AdminRouteGuard>
+                <AdminDashboardPage />
+              </AdminRouteGuard>
+            }
+          />
+          <Route
+            path="/admin/users"
+            element={
+              <AdminRouteGuard>
+                <AdminUsersPage />
+              </AdminRouteGuard>
+            }
+          />
+          <Route
+            path="/admin/projects"
+            element={
+              <AdminRouteGuard>
+                <AdminProjectsPage />
+              </AdminRouteGuard>
+            }
+          />
+          <Route
+            path="/admin/support"
+            element={
+              <AdminRouteGuard>
+                <AdminSupportPage />
+              </AdminRouteGuard>
+            }
+          />
         </Route>
 
         {/* Fallback 404 Redirect */}

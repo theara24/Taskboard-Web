@@ -20,6 +20,8 @@ import {
   Loader2,
 } from 'lucide-react';
 
+import { SEOHead } from '../components/common/SEOHead';
+
 export const DashboardPage: React.FC = () => {
   const navigate = useNavigate();
   const { currentUser } = useAuthStore();
@@ -91,6 +93,7 @@ export const DashboardPage: React.FC = () => {
 
   return (
     <div className="space-y-8">
+      <SEOHead title="Dashboard" description="Overview of your workspace, projects, quick metrics, and recent task activity." />
       {/* Welcome Banner */}
       <div className="rounded-3xl bg-gradient-to-r from-slate-900 via-blue-900 to-indigo-900 p-6 md:p-8 text-white shadow-xl shadow-blue-900/10 flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
         <div>

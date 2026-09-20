@@ -6,3 +6,5 @@ export * from './commentApi';
 export * from './dashboardApi';
 export * from './notificationApi';
 export * from './invitationApi';
+export * from './adminApi';
+export * from './supportApi';

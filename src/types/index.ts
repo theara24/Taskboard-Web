@@ -108,7 +108,10 @@ export type NotificationType =
   | 'INVITATION_ACCEPTED'
   | 'INVITATION_DECLINED'
   | 'ISSUE_ASSIGNED'
-  | 'SYSTEM';
+  | 'SYSTEM'
+  | 'SUPPORT_TICKET_CREATED'
+  | 'SUPPORT_TICKET_REPLY'
+  | 'SUPPORT_TICKET_STATUS_CHANGED';
 
 export interface Notification {
   id: string;
@@ -123,6 +126,8 @@ export interface Notification {
     projectKey?: string;
     inviterName?: string;
     role?: string;
+    ticketId?: string;
+    ticketKey?: string;
     [key: string]: any;
   };
   isRead: boolean;
@@ -148,5 +153,94 @@ export interface ProjectInvitation {
     id: string;
     name: string;
     email: string;
+  };
+}
+
+export type SupportCategory = 'ACCOUNT' | 'AUTHENTICATION' | 'PROJECT' | 'BUG' | 'OTHER';
+export type SupportPriority = 'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT';
+export type SupportStatus = 'OPEN' | 'IN_PROGRESS' | 'RESOLVED' | 'CLOSED';
+
+export interface SupportTicketMessage {
+  id: string;
+  ticketId: string;
+  userId: string;
+  message: string;
+  createdAt: string;
+  user: User;
+}
+
+export interface SupportTicket {
+  id: string;
+  ticketNumber: number;
+  ticketKey: string; // e.g. "SUP-1"
+  userId: string;
+  user: User;
+  subject: string;
+  description: string;
+  category: SupportCategory;
+  priority: SupportPriority;
+  status: SupportStatus;
+  createdAt: string;
+  updatedAt: string;
+  resolvedAt?: string | null;
+  messages?: SupportTicketMessage[];
+  _count?: {
+    messages: number;
+  };
+}
+
+export type PlatformActivityType =
+  | 'USER_REGISTERED'
+  | 'PROJECT_CREATED'
+  | 'SUPPORT_TICKET_CREATED'
+  | 'SUPPORT_TICKET_RESOLVED'
+  | 'USER_ROLE_CHANGED';
+
+export interface PlatformActivity {
+  id: string;
+  type: PlatformActivityType;
+  message: string;
+  userId?: string | null;
+  user?: User | null;
+  metadata?: any;
+  createdAt: string;
+}
+
+export interface AdminDashboardMetrics {
+  users: {
+    total: number;
+    newThisWeek: number;
+  };
+  projects: {
+    total: number;
+    newThisWeek: number;
+  };
+  issues: {
+    total: number;
+    createdThisWeek: number;
+  };
+  support: {
+    total: number;
+    open: number;
+    inProgress: number;
+    resolved: number;
+    closed: number;
+    urgent: number;
+  };
+  issueStatusDistribution: {
+    BACKLOG: number;
+    TODO: number;
+    IN_PROGRESS: number;
+    DONE: number;
+  };
+  userGrowth: {
+    date: string;
+    count: number;
+  }[];
+  recentActivity: PlatformActivity[];
+  recentTickets: SupportTicket[];
+  platformHealth: {
+    database: string;
+    api: string;
   };
 }

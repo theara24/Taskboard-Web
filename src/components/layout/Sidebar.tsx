@@ -2,6 +2,7 @@ import React from 'react';
 import { NavLink, useParams } from 'react-router-dom';
 import { useProjectStore } from '../../store/projectStore';
 import { useIssueStore } from '../../store/issueStore';
+import { useAuthStore } from '../../store/authStore';
 import {
   LayoutDashboard,
   FolderKanban,
@@ -11,6 +12,8 @@ import {
   User,
   Users,
   Layers,
+  LifeBuoy,
+  ShieldAlert,
 } from 'lucide-react';
 import { cn } from '../../utils/cn';
 
@@ -23,6 +26,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen = false, onClose }) => 
   const { projectId: urlProjectId } = useParams<{ projectId?: string }>();
   const { projects, activeProjectId } = useProjectStore();
   const { issues } = useIssueStore();
+  const { currentUser } = useAuthStore();
 
   const currentProjectId = urlProjectId || activeProjectId;
   const activeProject = projects.find((p) => p.id === currentProjectId) || projects[0];
@@ -30,7 +34,38 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen = false, onClose }) => 
   const projectIssues = issues.filter((i) => i.projectId === activeProject?.id);
   const openIssuesCount = projectIssues.filter((i) => i.status !== 'DONE').length;
 
+  const isAdmin = currentUser?.role === 'ADMIN';
+
   const navItems = [
+    ...(isAdmin
+      ? [
+          {
+            label: 'ADMIN PLATFORM',
+            items: [
+              {
+                name: 'Dashboard',
+                to: '/admin',
+                icon: LayoutDashboard,
+              },
+              {
+                name: 'Users',
+                to: '/admin/users',
+                icon: Users,
+              },
+              {
+                name: 'Projects',
+                to: '/admin/projects',
+                icon: FolderKanban,
+              },
+              {
+                name: 'Support Center',
+                to: '/admin/support',
+                icon: LifeBuoy,
+              },
+            ],
+          },
+        ]
+      : []),
     {
       label: 'Global',
       items: [
@@ -71,12 +106,17 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen = false, onClose }) => 
         : [],
     },
     {
-      label: 'Personal',
+      label: 'Personal & Support',
       items: [
         {
           name: 'My Profile',
           to: '/profile',
           icon: User,
+        },
+        {
+          name: 'Help & Support',
+          to: '/help',
+          icon: LifeBuoy,
         },
       ],
     },
