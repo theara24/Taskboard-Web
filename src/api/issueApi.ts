@@ -94,10 +94,25 @@ export function normalizeIssue(raw: any): Issue {
 export const issueApi = {
   getAll: async (params?: IssueListParams): Promise<IssueListResponse> => {
     let url = '/issues';
-    let queryParams: any = { ...params };
+    const queryParams: Record<string, any> = {};
 
-    if (params?.projectId) {
-      url = `/projects/${params.projectId}/issues`;
+    if (params) {
+      Object.entries(params).forEach(([key, val]) => {
+        if (
+          val !== undefined &&
+          val !== null &&
+          val !== '' &&
+          val !== 'ALL' &&
+          val !== 'null' &&
+          val !== 'undefined'
+        ) {
+          queryParams[key] = val;
+        }
+      });
+    }
+
+    if (queryParams.projectId) {
+      url = `/projects/${queryParams.projectId}/issues`;
       delete queryParams.projectId;
     }
 
@@ -129,12 +144,24 @@ export const issueApi = {
 
   create: async (data: CreateIssuePayload): Promise<Issue> => {
     const { projectId, ...body } = data;
-    const raw = await apiClient.post<any>(`/projects/${projectId}/issues`, body);
+    const cleanBody = {
+      ...body,
+      assigneeId: body.assigneeId || null,
+      dueDate: body.dueDate ? new Date(body.dueDate).toISOString() : null,
+    };
+    const raw = await apiClient.post<any>(`/projects/${projectId}/issues`, cleanBody);
     return normalizeIssue(raw);
   },
 
   update: async (id: string, data: UpdateIssuePayload): Promise<Issue> => {
-    const raw = await apiClient.patch<any>(`/issues/${id}`, data);
+    const cleanBody = {
+      ...data,
+      ...(data.assigneeId !== undefined ? { assigneeId: data.assigneeId || null } : {}),
+      ...(data.dueDate !== undefined
+        ? { dueDate: data.dueDate ? new Date(data.dueDate).toISOString() : null }
+        : {}),
+    };
+    const raw = await apiClient.patch<any>(`/issues/${id}`, cleanBody);
     return normalizeIssue(raw);
   },
 
